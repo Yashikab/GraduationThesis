@@ -1,0 +1,128 @@
+import matplotlib
+matplotlib.use('Agg')
+import sys
+sys.path.append('./module')
+import convHull as conv
+import matplotlib.pyplot as plt
+import pickle as pkl
+import numpy as np
+
+dim = 2
+num = 50
+#--load pickle--#
+title = './datasets/pickle/2class_dataset'+ str(num) +'P_'+ str(dim) + 'dim.pkl'
+with open(title,'rb') as f:
+    dataset = pkl.load(f)
+
+with open('./result/pickle/DBS.pkl','rb') as f:
+	DBS = pkl.load(f)
+with open('./result/pickle/New_DBS.pkl','rb') as f:
+	DBS2 = pkl.load(f)
+with open('./result/pickle/x_imp.pkl','rb') as f:
+	points = pkl.load(f)
+with open('./result/pickle/kikuchi.pkl','rb') as f:
+	points2 = pkl.load(f)
+with open('./result/pickle/QP_2classDB.pkl','rb') as f:
+	QP_x,QP_y = pkl.load(f)
+
+x_A = []
+y_A = []
+x_B = []
+y_B = []
+set_A =[]
+set_B=[]
+for i in range(len(dataset)):
+	if dataset.loc[i,'label'] == 1:
+		x_A.append(dataset.loc[i,'x0'])
+		y_A.append(dataset.loc[i,'x1'])
+		set_A.append(dataset.loc[i,['x0','x1']])
+	elif dataset.loc[i,'label'] == -1:
+		x_B.append(dataset.loc[i,'x0'])
+		y_B.append(dataset.loc[i,'x1'])
+		set_B.append(dataset.loc[i,['x0','x1']])
+
+#--draw decision boundary surface--#
+val_x = [0,10]
+val_y = []
+for i in range(len(val_x)):
+	val_y.append((-1)*(val_x[i]*DBS[0]+DBS[2])/DBS[1])
+val2_y = []
+for i in range(len(val_x)):
+	val2_y.append((-1)*(val_x[i]*DBS2[0]+DBS2[2])/DBS2[1])
+
+
+#-- plot average --#
+plt.scatter(x_A,y_A,color = 'black',marker='x')
+plt.scatter(x_B,y_B,color = 'gray',marker='o')
+#plt.plot(val_x,val_y,color='red',label='db')
+#plt.plot(val_x,val2_y,color='red',label='Decision boundary')
+
+#--imp--#
+b = np.array([points[0][0],points[0][1]])
+a = np.array([points[1][0],points[1][1]])
+weight = a - b
+DBS_b = (-1)*(np.dot(a,weight)+np.dot(b,weight))/2
+DBS_imp = np.append(weight,DBS_b)
+val_k = []
+for i in range(len(val_x)):
+	val_k.append((-1)*(val_x[i]*DBS_imp[0]+DBS_imp[2])/DBS_imp[1])
+#plt.plot(val_x,val_k,color='red',label='2class Gilbert Algorithm')
+#plt.scatter(points[0][0],points[0][1],color='red')
+#plt.scatter(points[1][0],points[1][1],color='red')
+#--kikuchi--#
+b = np.array([points2[0][0],points2[0][1]])
+a = np.array([points2[1][0],points2[1][1]])
+weight = a - b
+DBS_b = (-1)*(np.dot(a,weight)+np.dot(b,weight))/2
+DBS_kikuchi = np.append(weight,DBS_b)
+val_k = []
+for i in range(len(val_x)):
+	val_k.append((-1)*(val_x[i]*DBS_kikuchi[0]+DBS_kikuchi[2])/DBS_kikuchi[1])
+plt.plot(val_x,val_k,color='royalblue')
+#plt.plot(QP_x,QP_y,color='green',label='Quadratic Problem')
+        
+plt.scatter(points2[0][0],points2[0][1],color='b')
+plt.scatter(points2[1][0],points2[1][1],color='b')
+
+#print(DBS_imp/DBS_imp[1])
+#print(DBS2/DBS2[1])
+
+#--plot convex hull--#
+Lc = conv.conv(set_A)
+# Ploting result
+pp = np.array(set_A).T
+#plt.plot(pp[0], pp[1], "ko")
+
+Nc = len(Lc)
+p1 = Lc[0]
+for i in range(Nc-1):
+    p2 = Lc[i+1]
+    plt.plot((p1[0], p2[0]), (p1[1], p2[1]), "b-")
+    p1 = p2
+p1, p2 = Lc[0], Lc[-1]
+plt.plot((p1[0], p2[0]), (p1[1], p2[1]), "b-")
+
+Lc = conv.conv(set_B)
+# Ploting result
+pp = np.array(set_B).T
+#plt.plot(pp[0], pp[1], "ko")
+
+Nc = len(Lc)
+p1 = Lc[0]
+for i in range(Nc-1):
+    p2 = Lc[i+1]
+    plt.plot((p1[0], p2[0]), (p1[1], p2[1]), "b-")
+    p1 = p2
+p1, p2 = Lc[0], Lc[-1]
+plt.plot((p1[0], p2[0]), (p1[1], p2[1]), "b-")
+
+#--set Params--#
+plt.legend()
+plt.title(u'2-class Gilbert Algorithm')
+plt.xlabel(u'x0')
+plt.ylabel(u'x1')
+plt.axes().set_aspect('equal','datalim')
+
+#--save png--#
+OUTPUT_PATH = './image/2-class_kikuchi_'+str(num)+'P_imp.png'
+plt.savefig(OUTPUT_PATH)

@@ -1,2 +1,0 @@
-# GraduationThesis
-Gilbert algorithm etc

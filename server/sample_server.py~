@@ -1,0 +1,45 @@
+X3import socket
+from datetime import datetime
+import sys
+#--How to run--#
+#$python3 sample_client.py [PORT]
+MAX_SIZE = 1024
+
+
+argvs = sys.argv
+argc = len(argvs)
+if (argc < 2):
+    print ('You have to add [PORT] like "python3 sample_client.py [####]"')
+    quit()
+
+#--address&port--#
+HOST = 'localhost'
+PORT = int(argvs[1])
+address = (HOST,PORT)
+
+#--starting server--#
+server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+server.bind(address)
+server.listen(1) #waiting for client
+print('Waiting for connection...')
+
+#--get info from client--#
+client_sock, client_addr = server.accept()
+client_sock.send(b"server : connection start \n\n")
+print('conection start')
+
+while True:
+    msg = client_sock.recv(MAX_SIZE)
+    msg = msg.rstrip()
+
+    if msg == b'quit':
+        client_sock.send(b"server : connection end \n\n")
+        print('connection end')
+        break
+    else:
+        client_sock.send(b"server : %s \n" % msg)
+        print('client : %s' % msg.decode())
+
+
+client_sock.close()
+server.close()
